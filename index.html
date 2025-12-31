@@ -1,0 +1,618 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>元旦祝福 | 宋胜平 → 李晓玉</title>
+  <style>
+    :root{
+      --bg1:#050712; --bg2:#081a3a;
+      --neon1:#7C4DFF; --neon2:#00E5FF; --neon3:#FF2DAA;
+      --text:#EAF2FF; --muted:#A7B5D6;
+      --stroke:rgba(255,255,255,.16);
+      --shadow:0 18px 55px rgba(0,0,0,.55);
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%;margin:0;font-family: ui-sans-serif, system-ui, -apple-system, "PingFang SC","Microsoft YaHei", Arial;}
+    body{
+      color:var(--text);
+      background:
+        radial-gradient(1200px 800px at 20% 20%, rgba(124,77,255,.25), transparent 60%),
+        radial-gradient(900px 700px at 80% 30%, rgba(0,229,255,.18), transparent 55%),
+        radial-gradient(900px 700px at 50% 90%, rgba(255,45,170,.16), transparent 55%),
+        linear-gradient(180deg, var(--bg1), var(--bg2));
+      overflow:hidden;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+    }
+    canvas{position:absolute; inset:0; width:100%; height:100%;}
+    #fx{pointer-events:none;}
+
+    /* 倒计时卡片 */
+    .wrap{
+      position:relative; height:100%;
+      display:grid; place-items:center;
+      padding:18px; z-index:2;
+      opacity:1;
+      transform: scale(1);
+    }
+    /* 到点后倒计时卡片淡出消失 */
+    #countdownWrap.hide{
+      opacity:0;
+      transform: scale(0.985);
+      transition: opacity .6s ease, transform .6s ease;
+      pointer-events:none;
+    }
+
+    .card{
+      width:min(920px, 92vw);
+      border:1px solid var(--stroke);
+      background: linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.04));
+      box-shadow: var(--shadow);
+      border-radius:22px;
+      padding:22px 18px;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+    h1{
+      margin:0 0 10px;
+      font-size: clamp(28px, 5.2vw, 52px);
+      line-height:1.05;
+      letter-spacing:-.8px;
+    }
+    .neon{
+      background: linear-gradient(90deg, var(--neon1), var(--neon2), var(--neon3));
+      -webkit-background-clip:text;
+      background-clip:text;
+      color:transparent;
+      text-shadow: 0 0 24px rgba(0,229,255,.14);
+    }
+    .sub{
+      margin:0 0 14px;
+      font-size:14.5px; line-height:1.7;
+      color:var(--muted);
+    }
+    .count{display:flex; gap:10px; flex-wrap:wrap;}
+    .pill{
+      flex:1 1 110px; min-width:110px;
+      border:1px solid rgba(255,255,255,.18);
+      background: rgba(0,0,0,.18);
+      border-radius:16px;
+      padding:10px 10px;
+      text-align:center;
+    }
+    .pill b{display:block; font-size:28px; letter-spacing:.5px;}
+    .pill span{display:block; font-size:12px; color:var(--muted); margin-top:4px;}
+    .hint{
+      margin-top:12px;font-size:12px;color:rgba(231,243,255,.78);
+      user-select:none;
+    }
+
+    /* 中央打字祝福（结束后强制消失） */
+    #typingLayer{
+      position:fixed; inset:0;
+      display:flex; align-items:center; justify-content:center;
+      padding:24px;
+      opacity:0;
+      pointer-events:none;
+      transition: opacity .55s ease;
+      z-index:9;
+    }
+    #typingBox{
+      width:min(920px, 92vw);
+      border:1px solid rgba(255,255,255,.18);
+      background: rgba(0,0,0,.22);
+      border-radius:22px;
+      padding:22px 18px;
+      box-shadow: 0 18px 60px rgba(0,0,0,.55);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+    }
+    #typingTitle{
+      margin:0 0 10px;
+      font-size: clamp(26px, 6vw, 60px);
+      font-weight:850;
+      letter-spacing:-.6px;
+      line-height:1.05;
+    }
+    #typingText{
+      margin:0;
+      font-size: clamp(15px, 2.8vw, 22px);
+      line-height:1.85;
+      color: rgba(234,242,255,.95);
+      white-space:pre-wrap;
+      word-break:break-word;
+    }
+    .cursor{
+      display:inline-block;
+      width:10px;
+      margin-left:2px;
+      opacity:.85;
+      animation: blink 1s steps(2,end) infinite;
+    }
+    @keyframes blink { 50% { opacity: 0; } }
+
+    /* 右下角按钮：流程结束必出现 */
+    #retryBtn{
+      position:fixed;
+      right:14px;
+      bottom:14px;
+      z-index:20;
+      appearance:none;
+      border:1px solid rgba(255,255,255,.18);
+      border-radius:16px;
+      padding:12px 14px;
+      min-height:44px;
+      cursor:pointer;
+      font-weight:850;
+      color:#071022;
+      background: linear-gradient(90deg, var(--neon2), var(--neon1), var(--neon3));
+      box-shadow: 0 18px 40px rgba(0,229,255,.16);
+      opacity:0;
+      pointer-events:none;
+      transform: translateY(8px);
+      transition: opacity .6s ease, transform .6s ease;
+    }
+    #retryBtn.show{
+      opacity:1;
+      pointer-events:auto;
+      transform: translateY(0);
+    }
+
+    @media (max-width:420px){
+      .pill{min-width:100px}
+      #retryBtn{right:10px; bottom:10px}
+    }
+  </style>
+</head>
+
+<body>
+  <canvas id="fx"></canvas>
+
+  <div class="wrap" id="countdownWrap">
+    <div class="card">
+      <h1><span class="neon" id="titleText">倒计时</span> ❤️</h1>
+      <p class="sub" id="subtitle">倒计时结束：爱心烟花慢慢铺满全屏，并朗读祝福语。</p>
+
+      <div class="count" aria-label="countdown">
+        <div class="pill"><b id="d">--</b><span>天</span></div>
+        <div class="pill"><b id="h">--</b><span>时</span></div>
+        <div class="pill"><b id="m">--</b><span>分</span></div>
+        <div class="pill"><b id="s">--</b><span>秒</span></div>
+      </div>
+
+      <div class="hint" id="hint">
+        若语音没自动响：请轻点页面一次（浏览器限制），会自动重试朗读。
+      </div>
+    </div>
+  </div>
+
+  <!-- 打字祝福层（结束后消失） -->
+  <div id="typingLayer" aria-hidden="true">
+    <div id="typingBox">
+      <div id="typingTitle" class="neon">✨ 新年快乐 ✨</div>
+      <p id="typingText"></p>
+    </div>
+  </div>
+
+  <!-- 右下角按钮（流程结束必出现） -->
+  <button id="retryBtn" type="button">再来一次</button>
+
+  <script>
+    // ======================
+    // 配置
+    // ======================
+    const FROM_NAME = "宋胜平";
+    const TO_NAME   = "李晓玉";
+
+    const BLESSING_TEXT =
+      `${TO_NAME}，元旦快乐！我是${FROM_NAME}。\n` +
+      `新的一年，愿你平安喜乐，工作顺顺利利，烦恼清零，好运拉满；\n` +
+      `所求皆如愿，所行皆坦途，天天开心，事事顺心！`;
+
+    // 倒计时
+    const COUNTDOWN_SECONDS = 10;
+
+    // 常规爱心烟花节奏（慢一点）
+    const SPAWN_EVERY_MS = 650;
+
+    // 每隔多久来一次“满屏心”（高潮循环）
+    const FULLSCREEN_EVERY_MS = 12000;
+
+    // 每次“满屏心”持续与密度
+    const FULLSCREEN_BURST_MS = 2600;
+    const FULLSCREEN_BURST_EVERY_MS = 140;
+
+    // 打字速度（ms/字符）
+    const TYPE_MS = 85;
+
+    // ======================
+    // 工具
+    // ======================
+    const $ = (id)=>document.getElementById(id);
+    const pad2 = (n)=>String(n).padStart(2,"0");
+    const rand = (a,b)=>Math.random()*(b-a)+a;
+    const clamp = (v,a,b)=>Math.max(a,Math.min(b,v));
+
+    // ======================
+    // 倒计时
+    // ======================
+    let TARGET = null;
+    let exploded = false;
+
+    function setTargetAfter(seconds){ TARGET = new Date(Date.now() + seconds*1000); }
+    setTargetAfter(COUNTDOWN_SECONDS);
+
+    $("titleText").textContent = `${FROM_NAME} → ${TO_NAME}｜倒计时`;
+    $("subtitle").textContent  = `${FROM_NAME}送给${TO_NAME}的元旦祝福：到点后爱心烟花慢慢铺满全屏，并朗读。`;
+
+    function updateCountdown(){
+      const now = new Date();
+      const diff = TARGET - now;
+
+      if(diff <= 0){
+        $("d").textContent="00"; $("h").textContent="00"; $("m").textContent="00"; $("s").textContent="00";
+        if(!exploded){
+          exploded = true;
+          onArrive();
+        }
+        return;
+      }
+
+      const total = Math.floor(diff/1000);
+      const days = Math.floor(total / 86400);
+      const hrs  = Math.floor((total % 86400) / 3600);
+      const mins = Math.floor((total % 3600) / 60);
+      const secs = total % 60;
+
+      $("d").textContent = pad2(days);
+      $("h").textContent = pad2(hrs);
+      $("m").textContent = pad2(mins);
+      $("s").textContent = pad2(secs);
+    }
+    setInterval(updateCountdown, 120);
+    updateCountdown();
+
+    // ======================
+    // Canvas 爱心烟花（稳定版 + 寿命更长）
+    // ======================
+    const canvas = $("fx");
+    const ctx = canvas.getContext("2d");
+
+    let W=0, H=0, DPR=1;
+    function resize(){
+      DPR = devicePixelRatio || 1;
+      W = canvas.width  = Math.floor(innerWidth * DPR);
+      H = canvas.height = Math.floor(innerHeight * DPR);
+    }
+    addEventListener("resize", resize);
+    resize();
+
+    const particles = [];
+
+    function heartPoints(count){
+      const pts = [];
+      for(let i=0;i<count;i++){
+        const t = (Math.PI*2) * (i/count);
+        const x = 16 * Math.pow(Math.sin(t), 3);
+        const y = 13*Math.cos(t) - 5*Math.cos(2*t) - 2*Math.cos(3*t) - Math.cos(4*t);
+        pts.push({x: x/18, y: y/18}); // 归一化
+      }
+      return pts;
+    }
+    const HEART_PTS = heartPoints(300);
+
+    function spawnHeartFirework(cx, cy, mega=true){
+      const hue = rand(305, 340); // 粉红系
+      const spread = (mega ? rand(340, 560) : rand(240, 380)) * DPR;
+
+      // 寿命更长：更慢更耐看
+      const baseLife = mega ? rand(165, 230) : rand(120, 180);
+
+      // 中心闪光
+      particles.push({
+        x:cx,y:cy, vx:0,vy:0,
+        life: mega ? 26 : 16,
+        maxLife: mega ? 26 : 16,
+        hue, a:1, r0: (mega ? rand(28, 42) : rand(16, 22)) * DPR,
+        flash:true
+      });
+
+      // 心形轮廓粒子
+      const count = mega ? 460 : 300;
+      for(let i=0;i<count;i++){
+        const p = HEART_PTS[Math.floor(rand(0, HEART_PTS.length))];
+        const dx = p.x + rand(-0.02,0.02);
+        const dy = -p.y + rand(-0.02,0.02);
+        const dist = Math.hypot(dx,dy);
+
+        const sp = (spread * (0.008 + dist*0.010)) * rand(0.85, 1.10);
+
+        particles.push({
+          x: cx, y: cy,
+          vx: dx * sp,
+          vy: dy * sp,
+          g:  0.10 * DPR,
+          drag: mega ? 0.994 : 0.991,
+          life: baseLife * rand(0.85, 1.15),
+          maxLife: baseLife,
+          hue: hue + rand(-12, 12),
+          a: 1,
+          r0: (mega ? rand(1.7, 3.4) : rand(1.2, 2.7)) * DPR,
+          flash:false
+        });
+      }
+
+      // 星尘填充
+      const dust = mega ? 260 : 140;
+      for(let i=0;i<dust;i++){
+        const ang = rand(0, Math.PI*2);
+        const sp  = (mega ? 4.2 : 3.2) * DPR * rand(0.6, 1.2);
+        particles.push({
+          x: cx, y: cy,
+          vx: Math.cos(ang)*sp,
+          vy: Math.sin(ang)*sp,
+          g:  0.08 * DPR,
+          drag: 0.988,
+          life: (mega ? 130 : 95) * rand(0.7, 1.2),
+          maxLife: mega ? 130 : 95,
+          hue: hue + rand(-20, 20),
+          a: 1,
+          r0: rand(0.9, 2.0) * DPR,
+          flash:false
+        });
+      }
+    }
+
+    function tick(){
+      ctx.clearRect(0,0,W,H);
+      ctx.globalCompositeOperation = "lighter";
+
+      for(let i=particles.length-1;i>=0;i--){
+        const p = particles[i];
+        p.life--;
+        if(p.life <= 0){ particles.splice(i,1); continue; }
+
+        if(p.flash){
+          const alpha = clamp(p.life / p.maxLife, 0, 1);
+          const rr = Math.max(0.6, p.r0 * (1.28 - alpha));
+          ctx.globalAlpha = alpha;
+          ctx.beginPath();
+          ctx.fillStyle = `hsla(${p.hue}, 95%, 72%, ${alpha})`;
+          ctx.arc(p.x, p.y, rr, 0, Math.PI*2);
+          ctx.fill();
+          continue;
+        }
+
+        p.vx *= p.drag;
+        p.vy = p.vy*p.drag + p.g;
+        p.x += p.vx;
+        p.y += p.vy;
+
+        p.a = clamp(p.life / p.maxLife, 0, 1);
+        const rr = Math.max(0.6, p.r0 * p.a);
+
+        ctx.globalAlpha = p.a;
+        ctx.beginPath();
+        ctx.fillStyle = `hsla(${p.hue}, 95%, 65%, ${p.a})`;
+        ctx.arc(p.x, p.y, rr, 0, Math.PI*2);
+        ctx.fill();
+      }
+
+      ctx.globalAlpha = 1;
+      ctx.globalCompositeOperation = "source-over";
+      requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+
+    // ======================
+    // 烟花生成器：持续 + 周期性“满屏心”
+    // ======================
+    let spawnTimer = null;
+    let fullscreenTimer = null;
+    let fullscreenBurstTimer = null;
+
+    function startForeverHearts(){
+      if(spawnTimer) return;
+
+      const startAt = Date.now();
+
+      // 常规慢节奏：越到后面覆盖越广
+      spawnTimer = setInterval(()=>{
+        const t = Math.min(1, (Date.now() - startAt) / 14000);
+        const marginX = 0.10 + 0.20*(1-t);
+        const topY = 0.12 + 0.20*(1-t);
+        const botY = 0.30 + 0.25*(1-t);
+
+        const x = rand(marginX, 1-marginX) * W;
+        const y = rand(topY, 1-botY) * H;
+        spawnHeartFirework(x, y, true);
+      }, SPAWN_EVERY_MS);
+
+      // 周期性高潮：每隔一段时间来“满屏心”
+      fullscreenTimer = setInterval(()=>{
+        startFullscreenHeartsBurst();
+      }, FULLSCREEN_EVERY_MS);
+
+      // 先开场就来一次高潮
+      startFullscreenHeartsBurst();
+    }
+
+    function startFullscreenHeartsBurst(){
+      if(fullscreenBurstTimer) clearInterval(fullscreenBurstTimer);
+
+      const burstStart = Date.now();
+      fullscreenBurstTimer = setInterval(()=>{
+        const elapsed = Date.now() - burstStart;
+        if(elapsed > FULLSCREEN_BURST_MS){
+          clearInterval(fullscreenBurstTimer);
+          fullscreenBurstTimer = null;
+          return;
+        }
+        const x = rand(0.06, 0.94) * W;
+        const y = rand(0.10, 0.62) * H;
+        spawnHeartFirework(x, y, true);
+      }, FULLSCREEN_BURST_EVERY_MS);
+    }
+
+    // ======================
+    // 打字机：逐字出现；朗读结束后强制清空
+    // ======================
+    let typingTimer = null;
+
+    function showTypingText(fullText){
+      const layer = $("typingLayer");
+      const textEl = $("typingText");
+
+      layer.style.opacity = "1";
+      layer.setAttribute("aria-hidden", "false");
+      textEl.textContent = "";
+
+      let i = 0;
+      clearInterval(typingTimer);
+
+      typingTimer = setInterval(()=>{
+        i++;
+        const shown = fullText.slice(0, i);
+        textEl.textContent = shown;
+
+        if(i < fullText.length){
+          textEl.insertAdjacentHTML("beforeend", '<span class="cursor">▍</span>');
+        }
+
+        if(i >= fullText.length){
+          clearInterval(typingTimer);
+          typingTimer = null;
+        }
+      }, TYPE_MS);
+    }
+
+    function hideTypingLayerHard(){
+      clearInterval(typingTimer);
+      typingTimer = null;
+
+      const layer = $("typingLayer");
+      const textEl = $("typingText");
+
+      textEl.innerHTML = "";
+      layer.style.opacity = "0";
+      layer.setAttribute("aria-hidden", "true");
+    }
+
+    // ======================
+    // 语音朗读：无论成功失败，最终都会出按钮 & 清字
+    // ======================
+    let spokenDone = false;
+
+    function showRetryBtn(){
+      $("retryBtn").classList.add("show");
+    }
+
+    function finishFlow(){
+      if(spokenDone) return;
+      spokenDone = true;
+      hideTypingLayerHard();
+      showRetryBtn();
+    }
+
+    function speakBlessing(){
+      const synth = window.speechSynthesis;
+      if(!synth || typeof SpeechSynthesisUtterance === "undefined"){
+        $("hint").textContent = "当前浏览器不支持语音朗读。建议用 Chrome/Edge。";
+        setTimeout(finishFlow, Math.max(2200, BLESSING_TEXT.length * TYPE_MS));
+        return;
+      }
+
+      try{
+        synth.cancel();
+        const u = new SpeechSynthesisUtterance(BLESSING_TEXT.replace(/\n/g, " "));
+        u.lang = "zh-CN";
+        u.rate = 1.0; u.pitch = 1.0; u.volume = 1.0;
+
+        u.onend = ()=> finishFlow();
+        u.onerror = ()=> {
+          $("hint").textContent = "如未朗读：请轻点页面一次解锁语音权限；已为你准备“再来一次”。";
+          setTimeout(finishFlow, 6000);
+        };
+
+        synth.speak(u);
+
+        setTimeout(()=>{
+          if(!synth.speaking && !spokenDone){
+            $("hint").textContent = "轻点页面一次即可开启朗读（浏览器限制），点完会自动朗读。";
+            setTimeout(()=>{ if(!spokenDone) finishFlow(); }, 6500);
+          }
+        }, 700);
+      }catch(e){
+        $("hint").textContent = "朗读启动失败：请轻点页面一次后重试。";
+        setTimeout(finishFlow, 6500);
+      }
+    }
+
+    // 点击一次页面：如果语音被拦截，点一下就再尝试一次（兜底保证按钮出现）
+    addEventListener("pointerdown", ()=>{
+      if(exploded && !spokenDone){
+        speakBlessing();
+      }
+    }, {passive:true});
+
+    // ======================
+    // 到点事件
+    // ======================
+    function onArrive(){
+      // 倒计时卡片也消失
+      $("countdownWrap").classList.add("hide");
+
+      $("subtitle").textContent = `到点啦！${FROM_NAME}祝${TO_NAME}：新年快乐 ❤️`;
+
+      // 打字显示（全文逐字）
+      const fullText = `${FROM_NAME} 祝 ${TO_NAME}\n\n${BLESSING_TEXT}`;
+      showTypingText(fullText);
+
+      // 烟花持续 + 周期满屏心
+      startForeverHearts();
+
+      // 朗读：结束后清字 + 出按钮（兜底保证）
+      spokenDone = false;
+      speakBlessing();
+    }
+
+    // ======================
+    // 再来一次：重置
+    // ======================
+    function resetAll(){
+      exploded = false;
+      spokenDone = false;
+
+      // 清空文字层
+      hideTypingLayerHard();
+
+      // 隐藏按钮
+      $("retryBtn").classList.remove("show");
+
+      // 倒计时卡片重新出现
+      $("countdownWrap").classList.remove("hide");
+
+      // 停止烟花定时器（避免叠加）
+      if(spawnTimer){ clearInterval(spawnTimer); spawnTimer = null; }
+      if(fullscreenTimer){ clearInterval(fullscreenTimer); fullscreenTimer = null; }
+      if(fullscreenBurstTimer){ clearInterval(fullscreenBurstTimer); fullscreenBurstTimer = null; }
+
+      // 清空粒子
+      particles.length = 0;
+
+      // 重设倒计时
+      setTargetAfter(COUNTDOWN_SECONDS);
+
+      $("subtitle").textContent  = `${FROM_NAME}送给${TO_NAME}的元旦祝福：到点后爱心烟花慢慢铺满全屏，并朗读。`;
+      $("hint").textContent = "若语音没自动响：请轻点页面一次（浏览器限制），会自动重试朗读。";
+      updateCountdown();
+    }
+
+    $("retryBtn").addEventListener("click", (e)=>{
+      e.stopPropagation();
+      resetAll();
+    });
+  </script>
+</body>
+</html>
